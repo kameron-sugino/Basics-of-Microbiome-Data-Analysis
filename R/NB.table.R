@@ -1,0 +1,12 @@
+NB.table<-function(OTUS,newOTUS,Group){
+  Group<-factor(Group)
+  total<-rowSums(OTUS)
+  rel.otu<-newOTUS/total*100
+  overall<-paste(round(colMeans(rel.otu),1),"\u00b1",round(apply(rel.otu,2,sd),1))
+  taxa.mean<-as.matrix(round(aggregate(rel.otu,list(Group),mean)[,-1],1))
+  taxa.sd<-as.matrix(round(aggregate(rel.otu,list(Group),sd)[,-1],1))
+  taxa1<-t(matrix(nrow=length(unique(Group)),paste(taxa.mean,"\u00b1",taxa.sd)))
+  colnames(taxa1)<-levels(Group)
+  tables<-cbind(matrix(colnames(taxa.mean)),overall,taxa1)
+  return(tables)
+}
