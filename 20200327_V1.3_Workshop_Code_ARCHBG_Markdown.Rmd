@@ -8,12 +8,6 @@ output:
 # Basics-of-Microbiome-Data-Analysis
 This code is a primer on basic microbiota analysis methods as well as a primer for anyone who is new to R. We will go over basic R functions, rarefaction of microbiota count data, alpha diversity, beta diversity, negative binomial regression, as well as the associated plots, tables, and statistics.
 
-
-# Kam's Workshop Code V.1.3
-# Fixed bug in NB.Table(); now accepts any number of groups to make the table
-# Added additional functions
-# Added ... to functions to pass plotting arguments through to plot
-
 ## Things you'll need
 * Base R: https://www.r-project.org/
 * R Studio: https://rstudio.com/products/rstudio/download/
@@ -35,11 +29,11 @@ This code is a primer on basic microbiota analysis methods as well as a primer f
 
 # 2) Installing R Packages
 
-* Anyway, let's start by installing the packages you'll need for this.
+* Let's start by installing the packages you'll need for this.
   * Packages in R are meant to make your job easier. They are pre-written lines of code meant to do a specific job without you needing to code (or fully understand) how to implement your method of interest.
   * To do this, we use the function install.packages() with the package name (in quotations) inserted between the parentheses
   
-```{r,eval=FALSE}
+```{r, install-packages,eval=FALSE}
 install.packages("vegan")
 install.packages("lubridate")
 install.packages("tidyr")
@@ -69,7 +63,7 @@ require(car)
 require(dunn.test)
 require(ggplot2)
 ```
-```{r,include=FALSE}
+```{r, load-packages,include=FALSE}
 require(vegan)
 require(lubridate)
 require(tidyr)
@@ -88,11 +82,11 @@ require(ggplot2)
 * We will assign this data the variable name "Data.Raw" using the "<-" operation, like so:
 
 ```{r setup}
-knitr::opts_knit$set(root.dir = "D:/JF_Lab/Sugino/Kams_Summarized_R_Code/Basics-of-Microbiome-Data-Analysis/Data/")
+knitr::opts_knit$set(root.dir = "C:/Users/ksugino/Desktop/Github_projects/Basics-of-Microbiome-Data-Analysis/Data/")
 ```
 
-```{r}
-setwd('D:/JF_Lab/Sugino/Kams_Summarized_R_Code/Basics-of-Microbiome-Data-Analysis/Data/')
+```{r, read-in-data}
+setwd('C:/Users/ksugino/Desktop/Github_projects/Basics-of-Microbiome-Data-Analysis/Data/')
 Data.Raw<-read.table('otu_table.txt',fill=TRUE,header=TRUE)
 ```
 * setwd() tells R where your data is. Here, I'm specifying that R should look in the folder "20200122_Workshop_Code" and use that folder as its directory.
@@ -145,7 +139,7 @@ Data.Raw$Group
 
 * Anyway, we want the genus-level info, so we're looking for the rows with a "1" under the "label" column.
     
-```{r}
+```{r, pull-genus-data}
 Data.Raw<-Data.Raw[Data.Raw$label==1,]
 ```
 
@@ -196,11 +190,11 @@ Subsample<-function(OTU,Min=min(rowSums(OTU)),Iters=1){
   * "Min" tells the code to pick a defined number of reads per sample.
   * "Iters" makes the code perform the previous subsampling step several times, the code then takes the average of all the iterations and rounds to the nearest whole number.
 
-```{r, results="hide"}
+```{r, rarefy-otu-data, results="hide"}
 RawAbun<-Data.Raw[,-c(1:3)]
 Data.Group<-Data.Raw[,c(1:3)]
 
-Subsample<-Subsample(RawAbun, 15000, 999)
+Subsample<-Subsample(RawAbun, 15000, 10)
 ```
 
 * This iterative subsampling process is, in my opinion, important to get a representative sampling of reads. 
@@ -217,7 +211,7 @@ summary(rowSums(Subsample))
 
 * Now that we have the subsampled data, let's attach the sample info columns and create a new file so we don't have to run Subsample() again.
 
-```{r}
+```{r, save-rarefied-otus}
 Data.Subsample<-cbind(Data.Group, Subsample)
 write.table(Data.Subsample, 'Data.Subsample.txt', quote=FALSE, row.names=FALSE)
 ```
@@ -231,7 +225,7 @@ write.table(Data.Subsample, 'Data.Subsample.txt', quote=FALSE, row.names=FALSE)
   * This is more of a problem if your sample contains a complex community of many different types of bacteria (e.g., soil) or if you have to use a small number of reads (e.g., 1,000 reads may not be enough depth in some sample types).
 * To do this, we will make a rarefaction curve.
 
-```{r}
+```{r, plot-rarefaction-curve}
 Color<-ifelse(grepl("1w", Data.Subsample$Group),2, ifelse(grepl("-M|-m|M", Data.Subsample$Group),1,3))
 rarecurve(Data.Subsample[,-c(1:3)],step=500, xlab="Sample Size", ylab="Species",label=FALSE, col=Color)
 ```
@@ -252,7 +246,7 @@ rarecurve(Data.Subsample[,-c(1:3)],step=500, xlab="Sample Size", ylab="Species",
   
 * Since our rarefaction curve looks good, let's make two files of our subsampled data. One for the infant data and the other for the mom data.
 
-```{r, eval=FALSE}
+```{r, separate-otu-tables, eval=FALSE}
 #infant 1w
 Data.Baby1w<-Data.Subsample[grepl("1w", Data.Subsample$Group),]
 write.table(Data.Baby1w, 'Data.Subsample.Baby1w.txt', quote=FALSE, row.names=FALSE)
@@ -269,7 +263,7 @@ write.table(Data.Mom, 'Data.Subsample.Mom.txt', quote=FALSE, row.names=FALSE)
 * First, we'll read in the infant microbiota data file we just made and the BC data.
   * We also import the mom data since we only want to use infant data if we have data from their mom as well (don't worry about why we do this)
   
-```{r}
+```{r, read-in-separated-otu-tables}
 Data.Mom<-read.table('Data.Subsample.Mom.txt',header=TRUE, fill=TRUE)
 Data.Baby1w<-read.table('Data.Subsample.Baby1w.txt',header=TRUE, fill=TRUE)
 BCData<-read.table('BCData.txt', header=TRUE, fill=TRUE)
@@ -317,7 +311,7 @@ BCData$Group
 * Awesome. Now that they match (ignore the quotations, they don't matter for this application), we're going to use merge() to combine our datasets by sample ID. This makes it so participants that have data in all three datasets are kept and that their data is aligned across the mom, infant and BC data.
 * We will take this aligned data and split it back into the mom, infant and BC data.
 
-```{r}
+```{r, merge-otus-with-variable-data}
 temp<-merge(Data.Baby1w, Data.Mom,by="Group")
 temp2<-merge(temp,BCData,by="Group")
 #Break into Baby, Mom, and metadata
@@ -341,7 +335,7 @@ BCData$BMI_Category_Final
   
 * Let's fix that.
 
-```{r}
+```{r, refactor-bmi}
 BCData$BMI_Category_Final<-factor(BCData$BMI_Category_Final,levels=c("Normal","Overweight","Obese"))
 
 levels(BCData$BMI_Category_Final)
@@ -355,7 +349,7 @@ levels(BCData$BMI_Category_Final)
 
 * Of course, before we can do that, we have to read in the OTU names.
   * You may have noticed previously that the OTUs didn't have a bacterial name, just a number. Let's get the list of bacteria into R.
-```{r}
+```{r, read-taxa-names}
 TaxName<-read.table("tax_names.txt",header=TRUE, fill=TRUE,row.names=NULL)
 
 head(TaxName)
@@ -365,61 +359,31 @@ head(TaxName)
   * This column contains the ID of each OTU, classified from kingdom to genus. We only need the genus-level info for this analysis, so let's get rid of all the other text with Edit.Taxname()
 
 ```{r}
-Edit.Taxname<-function(n,level){
-  if(level=="Genus"|level==1){
-    n<-as.matrix(n)
-    for (i in 1:4){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n, col=1,into=c("Family","Genus"), sep=" ")
-    x<-ifelse(n$Genus%in%c("unclassified","uncultured"), paste(n$Genus, n$Family), paste(n$Genus,n$Other1,n$Other2))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Family"|level==2){
-    n<-as.matrix(n)
-    for (i in 1:3){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n,col=1, into=c("Order","Family","Genus"), sep=" ")
-    x<-ifelse(n$Family%in%c("unclassified","uncultured"), paste(n$Order, n$Family), paste(n$Family))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Order"|level==3){
-    n<-as.matrix(n)
-    for (i in 1:2){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n,col=1, into=c("Class","Order","Family","Genus"), sep=" ")
-    x<-ifelse(n$Order%in%c("unclassified","uncultured"), paste(n$Class, n$Order), paste(n$Order))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Class"|level==4){
-    n<-as.matrix(n)
-    for (i in 1){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n,col=1, into=c("Phylum","Class","Order","Family","Genus"), sep=" ")
-    x<-ifelse(n$Class%in%c("unclassified","uncultured"), paste(n$Phylum, n$Class), paste(n$Class))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Phylum"|level==5){
-    n<-as.matrix(n)
-    n<-gsub('[(0-9);""]{1,}', '_', n)
-    n<-gsub('^.*?_', '', n)
-    n<-gsub('_.*', '', n)
+Edit.Taxname<-function(taxname,level,sep=";"){
+  taxname<-data.frame(taxname)
+  taxname<-separate(taxname,col=1, into=c("Kingdom","Phylum","Class","Order","Family","Genus"), sep=";")
+  if(grepl("Genus|1", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Genus), paste(taxname$Genus, taxname$Family), 
+              paste(taxname$Genus))
   }
+  if(grepl("Family|2", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Family), paste(taxname$Order, taxname$Family), 
+              paste(taxname$Family))
+  }
+  if(grepl("Order|3", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Order), paste(taxname$Class, taxname$Order), 
+              paste(taxname$Order))
+  }
+  if(grepl("Class|4", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Class), paste(taxname$Phylum, taxname$Class),
+              paste(taxname$Class))
+  }
+  if(grepl("Phylum|5", level, ignore.case = T)){
+    x<-paste(taxname$Phylum)
+    
+  }
+  x<-gsub("\\([[:digit:]]+\\)","",x)
+  return(x)
 }
 ```
 
@@ -427,7 +391,7 @@ Edit.Taxname<-function(n,level){
   * "TaxName", as you can imagine, accepts the TaxName file that we just read in. Make sure to specify the "Taxonomy" column.
     * "level" tells R which taxonomic level you want to end up with. 1 = genus, 2 = family, etc.
 
-```{r}
+```{r, edit-down-taxa-names}
 TaxName<-Edit.Taxname(TaxName$Taxonomy,level=1)
 ```
 
@@ -493,7 +457,7 @@ StackedBarPlot<-function(OTU,Group="Samples",TaxName,N=19,Title="Stacked Bar Cha
   * "Title" is what you want the title of the chart to be.
 * Let's see what it looks like:
 
-```{r,fig.height=7,fig.width=10}
+```{r, stacked-bar-plot,fig.height=7,fig.width=10}
 a<-StackedBarPlot(OTU=Data.Baby1w[,-c(1:3)],TaxName=TaxName)
 ```
 
@@ -506,12 +470,12 @@ a<-StackedBarPlot(OTU=Data.Baby1w[,-c(1:3)],TaxName=TaxName)
 
 
 ```{r}
-Alpha<-function(OTU,Names="Sample",Groups="Sample"){
+Alpha<-function(OTU, Groups="Sample"){
   Chao<-t(estimateR(OTU))
   Chao<-Chao[,2]
   Shannon<-diversity(OTU,index="shannon")
   Invsimpson<-diversity(OTU,index="invsimpson")
-  OTU.Subsample.Alpha<-data.frame(Names,Groups,Chao,Shannon,Invsimpson)
+  OTU.Subsample.Alpha<-data.frame(Groups,Chao,Shannon,Invsimpson)
   return(OTU.Subsample.Alpha)
 }
 ```
@@ -520,7 +484,7 @@ Alpha<-function(OTU,Names="Sample",Groups="Sample"){
   * "OTU" is the only important input. This allows the funciton to convert your OTU table to Chao1, Shannon and inverse Simpson diversity.
   * The other inputs are if you want to add ID, or another variable to the output table created by Alpha()
 
-```{r}
+```{r, calc-alpha-diversity}
 Data.Baby1w.Alpha<-Alpha(Data.Baby1w[,-c(1:3)])
 ```
 
@@ -535,7 +499,7 @@ head(Data.Baby1w.Alpha)
 
 * With this data, we can start to do some analyses. First, we need to check whether the data are normally distributed using a Shapiro-Wilk test.
 
-```{r}
+```{r, test-for-normal-distribution}
 shapiro.test(Data.Baby1w.Alpha$Chao)
 shapiro.test(Data.Baby1w.Alpha$Shannon)
 shapiro.test(Data.Baby1w.Alpha$Invsimpson)
@@ -563,7 +527,7 @@ a<-BCData$BMI_Category_Final
 
 * Great. We can finally get started with boxplot()
 
-```{r}
+```{r, alpha-diversity-boxplots}
 boxplot(chao~a,main="chao1 Index of Babies at 1 Week",ylab="Chao1 Index")
 ```
 
@@ -598,7 +562,7 @@ kruskal.test(invsimp~a)
 * In cases where you are only comparing two factors, you would use a Wilcoxon rank sum test instead of a Kruskal-wallis.
   * Let's see how to do that with our breastfeeding data, which is split into exclusive (1) and non-exclusive (0) breastfeeding:
 
-```{r}
+```{r, alpha-diversity-by-BF}
 a<-BCData$Exclusive_BF
 
 boxplot(chao~a,main="Chao1 Index of Babies at 1 Week",ylab="Chao1 Index")
@@ -612,7 +576,7 @@ wilcox.test(invsimp~a)
 * Using wilcox.test() uses the same inputs as using kruskal.test()!
 * I said I'd show you how to do an ANOVA in R, so let's do that with the inverse Simpson data and compare the maternal BMI categories
 
-```{r}
+```{r, alpha-diversity-anova-example}
 a<-BCData$BMI_Category_Final
 summary(aov(invsimp~a))
 ```
@@ -645,7 +609,7 @@ Alpha.Table<-function(alpha,group,...){
   * "group" is the variable that you want R to use to make the table.
 * Let's try it with the BMI category variable
 
-```{r}
+```{r, create-alpha-diversity-summary-table}
 a<-BCData$BMI_Category_Final
 Alpha.Table(Data.Baby1w.Alpha,a)
 ```
@@ -659,7 +623,7 @@ Alpha.Table(Data.Baby1w.Alpha,a)
   * It's pretty much the same procedure as before, but we will be using plot() and cor.test()
 
 * Let's take a look at alpha diversity and infant age
-```{r}
+```{r, scatter-plot-alpha-diversity}
 plot(Data.Baby1w.Alpha$Chao~BCData$Baby.Age,main="Chao1 Index of Babies at 1 Week",ylab="Chao1 Index")
 abline(lm(Data.Baby1w.Alpha$Chao~BCData$Baby.Age))
 ```
@@ -670,7 +634,7 @@ abline(lm(Data.Baby1w.Alpha$Chao~BCData$Baby.Age))
 
 * cor.test() has a few different methods of finding correlations. The two main ones we use are the pearson (parametric) and spearman (non-parametric) correlations.
    * Just like before, which one you use depends on the normality of the data. Here we use the non-parametric test.
-```{r}
+```{r, correlation-alpha-diversity}
 cor.test(Data.Baby1w.Alpha$Chao,BCData$Baby.Age,method="spearman")
 ```
 
@@ -732,7 +696,7 @@ Sor.bray.pcoa<-function(OTUS,Dim=2,Color=1,binary,Title="PCoA",...){
   
 * Let's try plotting the maternal BMI data on a Sorensen plot:
 
-```{r}
+```{r, sorensen-plot}
 df.Baby1w.Sor<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Category_Final,binary=TRUE)
 ```
 
@@ -789,7 +753,7 @@ plot(df.Baby1w.Sor,cex.axis=1.5,cex.lab=1.5,cex.main=1,cex=2,col=1,
 * Our plot could still use a few things, like ellipses around our different groups.
   * We can do this using ordiellipse()
 
-```{r}
+```{r, sorensen-plot-ellipses}
 plot(df.Baby1w.Sor,cex.axis=1.5,cex.lab=1.5,cex.main=1,col=1,
      pch=21,cex=2,xlim=c(-.3,.55),ylim=c(-.35,.35),xlab="PC1 (16.8%)",ylab="PC2 (13.9%)",bg=Color.Baby)
 ordiellipse(df.Baby1w.Sor,BCData$BMI_Category_Final,col=c("#000000","#E79F00","#0072B2"),lwd=2)
@@ -803,7 +767,7 @@ ordiellipse(df.Baby1w.Sor,BCData$BMI_Category_Final,col=c("#000000","#E79F00","#
   * "lwd" is used to change the width of the ellipses.  
     
 * Finally, let's add a legend.
-```{r}
+```{r, sorensen-plot-ellipses-legend}
 plot(df.Baby1w.Sor,cex.axis=1.5,cex.lab=1.5,cex.main=1,col=1,
      pch=21,cex=2,xlim=c(-.3,.55),ylim=c(-.35,.35),xlab="PC1 (16.8%)",ylab="PC2 (13.9%)",bg=Color.Baby)
 ordiellipse(df.Baby1w.Sor,BCData$BMI_Category_Final,col=c("#000000","#E79F00","#0072B2"),lwd=2)
@@ -844,10 +808,10 @@ PERMDISP<-function(OTUS,Group,binary,iters=9999){
     * PERMANOVA works by randomly drawing from the data and comparing the result to what the actual data looks like. This is essentially a test to see whether your groups may be different from each other due to chance or if there is actually a difference between the groups.
     * Don't worry too much about what this is doing, just know that you need to have a sufficiently large number of iterations to get a stable p-value, otherwise the p-value can increase and decrease somewhat randomly. 9999 iters is pretty much always good enough.
 
-```{r}
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,9999)
+```{r, pcoa-statistics}
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,10)
 p$aov.tab
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,10)
 p$aov.tab
 ```
 
@@ -857,9 +821,9 @@ p$aov.tab
 ```{r}
 df.Baby1w.Sor<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$Exclusive_BF+1,binary=TRUE)
 ordiellipse(df.Baby1w.Sor,groups=BCData$Exclusive_BF,col=c(1,2))
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,9999)
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,10)
 p$aov.tab
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,10)
 p
 ```
 
@@ -867,7 +831,7 @@ p
 * Let's output the BMI figure as a png with png()
   
   
-```{r}
+```{r, outputting-plots}
 png("Sor.Baby1w.BMI.png", res=300, height=7, width=7.5, units="in")
 plot(df.Baby1w.Sor,cex.axis=1.5,cex.lab=1.5,cex.main=1,col=1,
      pch=21,cex=2,xlim=c(-.3,.55),ylim=c(-.35,.35),xlab="PC1 (16.8%)",ylab="PC2 (13.9%)",bg=Color.Baby)
@@ -895,23 +859,23 @@ dev.off()
   * The only difference between the Sorensen code and the Bray-Curtis code is binary is set to "FALSE" instead of "TRUE".
   * In other words, you can totally copy/paste the previous set of code and just replace the one variable, like so for maternal BMI:
 
-```{r}
+```{r, bray-curtis-plots-bmi}
 df.Baby1w.Bray<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Category_Final,binary=FALSE)
 ordiellipse(df.Baby1w.Bray,groups=BCData$BMI_Category_Final,col=c(1,2,3))
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,9999)
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,10)
 p$aov.tab
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,10)
 p
 ```
 
 * And for breastfeeding:
 
-```{r}
+```{r, bray-curtis-plots-bf}
 df.Baby1w.Bray<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$Exclusive_BF+1,binary=FALSE)
 ordiellipse(df.Baby1w.Bray,groups=BCData$Exclusive_BF,col=c(1,2))
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,9999)
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,10)
 p$aov.tab
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,10)
 p
 ```
 
@@ -930,7 +894,7 @@ par(mfrow = c(2,2),mar=c(4,4.3,1,1))
     * You can alter these numbers to alter the space on the bottom, left, top and right sides of the plots. This allows you to fit larger graphs or give axis labels more room if the names are long.
 * Just like when you were making a png, you have to follow this argument with the code for each of your plots:
 
-```{r}
+```{r, multi-panel-plot-example}
 par(mfrow = c(2,2),mar=c(4,4.3,1,1))
 plot(df.Baby1w.Bray,cex.axis=1.5,cex.lab=1.5,cex.main=2,col=1,
      pch=21,cex=2,xlim=c(-.45,.65),ylim=c(-.6,.45),xlab="PC1 (26.5%)",ylab="PC2 (21.3%)",bg=Color.Baby)
@@ -970,8 +934,8 @@ Plot.Taxa<-function(OTUS,Data.PCOA,TaxName,CutOff=1,pval=0.05,...){
   ratio<-as.matrix(col/row*100)
   ratio<-cbind(TaxName,ratio)
   subset<-data.frame(ratio[ratio[,2]>=CutOff,])
-  subset<-data.frame(subset[!subset$X1=="unclassified unclassified",])
-  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset$X1])
+  subset<-data.frame(subset[!subset[,1]=="unclassified unclassified",])
+  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset[,1]])
   colname<-colnames(newOTUS)
   colnames(newOTUS)<-gsub("\\."," ",colname)
   fit<-envfit(Data.PCOA, newOTUS)
@@ -990,7 +954,7 @@ Plot.Taxa<-function(OTUS,Data.PCOA,TaxName,CutOff=1,pval=0.05,...){
 * This code only works for the Bray-Curtis PCoA since it plots the correlation between bacterial abundance and the plot coordinates.
 * Let's see what this looks like:
 
-```{r}
+```{r, plot-envfit}
 df.Baby1w.Bray<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Category_Final,binary=FALSE)
 ordiellipse(df.Baby1w.Bray,groups=BCData$BMI_Category_Final,col=c(1,2,3))
 Plot.Taxa(Data.Baby1w[,-c(1:3)],df.Baby1w.Bray,TaxName,1,0.05)
@@ -1016,9 +980,9 @@ Subset.Taxa<-function(OTUS,TaxName,CutOff=1){
   ratio<-as.matrix(col/row*100)
   ratio<-cbind(TaxName,ratio)
   subset<-data.frame(ratio[ratio[,2]>=CutOff,])
-  subset<-data.frame(subset[!subset$X1=="unclassified unclassified",])
-  subset<-data.frame(subset[!grepl("uncultured_ge",subset$X1),])
-  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset$X1])
+  subset<-data.frame(subset[!subset[,1]=="unclassified unclassified",])
+  subset<-data.frame(subset[!grepl("uncultured_ge",subset[,1]),])
+  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset[,1]])
   colname<-colnames(newOTUS)
   colnames(newOTUS)<-gsub("\\."," ",colname)
   return(newOTUS)
@@ -1034,7 +998,7 @@ Subset.Taxa<-function(OTUS,TaxName,CutOff=1){
     
 * Here's how you use the command:
 
-```{r}
+```{r, create-taxa-subset}
 newOTUS<-Subset.Taxa(Data.Baby1w[,-c(1:3)],TaxName=TaxName,CutOff=1)
 ```
 
@@ -1071,7 +1035,7 @@ abline(h=0.05)
   * "newOTUS" is the Subset.Taxa() output
   * "Group" is the group you want to compare.
 
-```{r, warning=FALSE}
+```{r, negative-binomial-regression, warning=FALSE}
 Groups<-BCData
 Group<-Groups$BMI_Category_Final
 
@@ -1154,7 +1118,7 @@ p.plot<-function(NB.pair,title="Plotted p-values"){
 
 * This code takes the output from NB.pairwise() and plots the p-values like we did previously. Put it all together and it looks like this:
 
-```{r,warning=FALSE}
+```{r, post-hoc-test-and-plotting-pvalues,warning=FALSE}
 Group<-BCData$BMI_Category_Final
 temp<-NB.pairwise(newOTUS,Group)
 p.plot(temp)
@@ -1201,7 +1165,7 @@ NB.table<-function(OTUS,newOTUS,Group){
   * "newOTUS": the edited OTU table that only includes taxa above your desired abundance threshold.
   * "Group": the group variable you want for comparison
 
-```{r}
+```{r, negative-binomial-summary-table}
 test<-NB.table(Data.Baby1w[,-c(1:3)],newOTUS,Group)
 test
 ```
@@ -1229,7 +1193,7 @@ stepplot.pc1<-function(sor.bray.df,sample_ids,col=1,pc="PC1",...){
 * This takes a Sor.bray.pcoa() output, sample ids, any colors/groups you want, and the PC1 label (so you can add the % variance to the plot)
   * NOTE: This is most useful if you have timeseries data since you can track changes over PC1 for every individual relatively easily. You can definitely use it for single timepoint data though, as we are about to do.
 
-```{r}
+```{r, sorensen-pc1-step-plot}
 df.Baby1w.Bray<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Category_Final,binary=FALSE)
 
 stepplot.pc1(df.Baby1w.Bray,BCData$Group,BCData$BMI_Category_Final)
@@ -1240,7 +1204,7 @@ stepplot.pc1(df.Baby1w.Bray,BCData$Group,BCData$BMI_Category_Final)
 * The other plot we're going to make is a plot showing the change in microbiota abundance between two timepoint for each individual. For this, we're going to switch to the SPICE dataset.
   * The SPICE data collected microbiota data from 3 timepoints per participant, allowing us to look for changes in abundance over time
   
-```{r}
+```{r, read-in-wheat-study-data}
 Data<-read.table("Wheat_Data.Subsample.Genus.shared",header=TRUE)
 Data<-Data[-c(109:110,29),]
 TaxName<-read.table("Wheat_tax_names.taxonomy",header=TRUE)
@@ -1299,7 +1263,7 @@ bubble.plot<-function(OTUs_group1,OTUs_group2,ids_group1,ids_group2){
 * And here's our function. Honestly, the way I wrote this is kinda garbage, but I tried to make it transparent enough that you may be able to run each line of the function independently, see what the output is, and then fix any issues that may arise.
 * But let's see what happens when it works.
 
-```{r,fig.dim = c(15, 8)}
+```{r, bubble-plot-of-wheat-data,fig.dim = c(15, 8)}
 OTUs_group1<-temp[temp$Week.number=="A",-c(1:25)]
 OTUs_group2<-temp[temp$Week.number=="B",-c(1:25)]
 ids_group1<-temp[temp$Week.number=="A",1]
@@ -1342,7 +1306,7 @@ paired.arrows<-function(pcoa.df,id,group,term1,term2,lwd=1){
   
 * To make this plot, we're going to use the SPICE data again
 
-```{r}
+```{r, plot-pcoa-of-paired-samples}
 Data<-read.table("Wheat_Data.Subsample.Genus.shared",header=TRUE)
 Data<-Data[-c(109:110,29),]
 TaxName<-read.table("Wheat_tax_names.taxonomy",header=TRUE)

@@ -6,14 +6,6 @@ rarefaction of microbiota count data, alpha diversity, beta diversity,
 negative binomial regression, as well as the associated plots, tables,
 and statistics.
 
-# Kam’s Workshop Code V.1.3
-
-# Fixed bug in NB.Table(); now accepts any number of groups to make the table
-
-# Added additional functions
-
-# Added … to functions to pass plotting arguments through to plot
-
 ## Things you’ll need
 
 -   Base R: <https://www.r-project.org/>
@@ -60,7 +52,7 @@ and statistics.
 
 # 2) Installing R Packages
 
--   Anyway, let’s start by installing the packages you’ll need for this.
+-   Let’s start by installing the packages you’ll need for this.
     -   Packages in R are meant to make your job easier. They are
         pre-written lines of code meant to do a specific job without you
         needing to code (or fully understand) how to implement your
@@ -117,11 +109,11 @@ require(ggplot2)
     “\<-” operation, like so:
 
 ``` r
-knitr::opts_knit$set(root.dir = "D:/JF_Lab/Sugino/Kams_Summarized_R_Code/Basics-of-Microbiome-Data-Analysis/Data/")
+knitr::opts_knit$set(root.dir = "C:/Users/ksugino/Desktop/Github_projects/Basics-of-Microbiome-Data-Analysis/Data/")
 ```
 
 ``` r
-setwd('D:/JF_Lab/Sugino/Kams_Summarized_R_Code/Basics-of-Microbiome-Data-Analysis/Data/')
+setwd('C:/Users/ksugino/Desktop/Github_projects/Basics-of-Microbiome-Data-Analysis/Data/')
 Data.Raw<-read.table('otu_table.txt',fill=TRUE,header=TRUE)
 ```
 
@@ -331,7 +323,7 @@ summary(rowSums(Data.Raw[,-c(1:3)]))
 hist(rowSums(Data.Raw[,-c(1:3)]))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-11-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 -   Here, we use rowSums() to get the sum of each participant’s OTUS,
     then output a summary of that data with summary() as well as a
@@ -381,7 +373,7 @@ Subsample<-function(OTU,Min=min(rowSums(OTU)),Iters=1){
 RawAbun<-Data.Raw[,-c(1:3)]
 Data.Group<-Data.Raw[,c(1:3)]
 
-Subsample<-Subsample(RawAbun, 15000, 999)
+Subsample<-Subsample(RawAbun, 15000, 10)
 ```
 
 -   This iterative subsampling process is, in my opinion, important to
@@ -402,7 +394,7 @@ summary(rowSums(Subsample))
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   14984   14994   14996   14996   14998   15004
+    ##   14987   14994   14996   14996   14997   15003
 
 \*Remember, we rounded the averaged subsample data, so there will be a
 little bit of variation in the number of reads per sample, but nothing
@@ -445,7 +437,7 @@ Color<-ifelse(grepl("1w", Data.Subsample$Group),2, ifelse(grepl("-M|-m|M", Data.
 rarecurve(Data.Subsample[,-c(1:3)],step=500, xlab="Sample Size", ylab="Species",label=FALSE, col=Color)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-16-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/plot-rarefaction-curve-1.png)
 
 -   There are two parts to this chunk of code.
     -   The first part that we set to the variable name “Color” looks at
@@ -701,61 +693,31 @@ head(TaxName)
         so let’s get rid of all the other text with Edit.Taxname()
 
 ``` r
-Edit.Taxname<-function(n,level){
-  if(level=="Genus"|level==1){
-    n<-as.matrix(n)
-    for (i in 1:4){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n, col=1,into=c("Family","Genus"), sep=" ")
-    x<-ifelse(n$Genus%in%c("unclassified","uncultured"), paste(n$Genus, n$Family), paste(n$Genus,n$Other1,n$Other2))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Family"|level==2){
-    n<-as.matrix(n)
-    for (i in 1:3){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n,col=1, into=c("Order","Family","Genus"), sep=" ")
-    x<-ifelse(n$Family%in%c("unclassified","uncultured"), paste(n$Order, n$Family), paste(n$Family))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Order"|level==3){
-    n<-as.matrix(n)
-    for (i in 1:2){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n,col=1, into=c("Class","Order","Family","Genus"), sep=" ")
-    x<-ifelse(n$Order%in%c("unclassified","uncultured"), paste(n$Class, n$Order), paste(n$Order))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Class"|level==4){
-    n<-as.matrix(n)
-    for (i in 1){
-      n<-gsub('^.*?;', '', n)
-    }
-    n<-gsub(';',' ',n)
-    n<-gsub('\\(100)','',n)
-    n<-data.frame(n)
-    n<-separate(n,col=1, into=c("Phylum","Class","Order","Family","Genus"), sep=" ")
-    x<-ifelse(n$Class%in%c("unclassified","uncultured"), paste(n$Phylum, n$Class), paste(n$Class))
-    n<-as.matrix(x)
-    return(n)
-  }else if(level=="Phylum"|level==5){
-    n<-as.matrix(n)
-    n<-gsub('[(0-9);""]{1,}', '_', n)
-    n<-gsub('^.*?_', '', n)
-    n<-gsub('_.*', '', n)
+Edit.Taxname<-function(taxname,level,sep=";"){
+  taxname<-data.frame(taxname)
+  taxname<-separate(taxname,col=1, into=c("Kingdom","Phylum","Class","Order","Family","Genus"), sep=";")
+  if(grepl("Genus|1", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Genus), paste(taxname$Genus, taxname$Family), 
+              paste(taxname$Genus))
   }
+  if(grepl("Family|2", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Family), paste(taxname$Order, taxname$Family), 
+              paste(taxname$Family))
+  }
+  if(grepl("Order|3", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Order), paste(taxname$Class, taxname$Order), 
+              paste(taxname$Order))
+  }
+  if(grepl("Class|4", level, ignore.case = T)){
+    x<-ifelse(grepl("unclassified|uncultured",taxname$Class), paste(taxname$Phylum, taxname$Class),
+              paste(taxname$Class))
+  }
+  if(grepl("Phylum|5", level, ignore.case = T)){
+    x<-paste(taxname$Phylum)
+    
+  }
+  x<-gsub("\\([[:digit:]]+\\)","",x)
+  return(x)
 }
 ```
 
@@ -769,7 +731,7 @@ Edit.Taxname<-function(n,level){
 TaxName<-Edit.Taxname(TaxName$Taxonomy,level=1)
 ```
 
-    ## Warning: Expected 2 pieces. Additional pieces discarded in 439 rows [1, 2, 3, 4, 5, 6,
+    ## Warning: Expected 6 pieces. Additional pieces discarded in 439 rows [1, 2, 3, 4, 5, 6,
     ## 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...].
 
 -   Easy, right? Let’s see what it looks like.
@@ -778,13 +740,9 @@ TaxName<-Edit.Taxname(TaxName$Taxonomy,level=1)
 head(TaxName)
 ```
 
-    ##      [,1]                             
-    ## [1,] "unclassified Enterobacteriaceae"
-    ## [2,] "Bacteroides  "                  
-    ## [3,] "unclassified Lachnospiraceae"   
-    ## [4,] "Bifidobacterium  "              
-    ## [5,] "Megasphaera  "                  
-    ## [6,] "Veillonella  "
+    ## [1] "unclassified Enterobacteriaceae" "Bacteroides"                    
+    ## [3] "unclassified Lachnospiraceae"    "Bifidobacterium"                
+    ## [5] "Megasphaera"                     "Veillonella"
 
 -   Great, looks like some bacterial names, right? You’ll notice some
     are named “unclassified”. It just means that the OTU couldn’t be
@@ -851,7 +809,7 @@ StackedBarPlot<-function(OTU,Group="Samples",TaxName,N=19,Title="Stacked Bar Cha
 a<-StackedBarPlot(OTU=Data.Baby1w[,-c(1:3)],TaxName=TaxName)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-31-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/stacked-bar-plot-1.png)
 
 -   This chart is showing the top 19 most abundant taxa in our data for
     each infant. We can see that there’s a lot of variation between
@@ -865,12 +823,12 @@ a<-StackedBarPlot(OTU=Data.Baby1w[,-c(1:3)],TaxName=TaxName)
 -   To calculate alpha diversity, we’ll use the function Alpha()
 
 ``` r
-Alpha<-function(OTU,Names="Sample",Groups="Sample"){
+Alpha<-function(OTU, Groups="Sample"){
   Chao<-t(estimateR(OTU))
   Chao<-Chao[,2]
   Shannon<-diversity(OTU,index="shannon")
   Invsimpson<-diversity(OTU,index="invsimpson")
-  OTU.Subsample.Alpha<-data.frame(Names,Groups,Chao,Shannon,Invsimpson)
+  OTU.Subsample.Alpha<-data.frame(Groups,Chao,Shannon,Invsimpson)
   return(OTU.Subsample.Alpha)
 }
 ```
@@ -893,13 +851,13 @@ Data.Baby1w.Alpha<-Alpha(Data.Baby1w[,-c(1:3)])
 head(Data.Baby1w.Alpha)
 ```
 
-    ##    Names Groups      Chao   Shannon Invsimpson
-    ## 1 Sample Sample  72.20000 1.5370526   3.197425
-    ## 2 Sample Sample  63.75000 2.0038366   6.020738
-    ## 3 Sample Sample  45.00000 1.3343501   2.739592
-    ## 4 Sample Sample  57.33333 0.7913534   1.751678
-    ## 5 Sample Sample  52.50000 1.1423217   2.202260
-    ## 6 Sample Sample 103.00000 2.1361675   6.766567
+    ##   Groups  Chao   Shannon Invsimpson
+    ## 1 Sample 45.20 1.5323002   3.205960
+    ## 2 Sample 36.00 1.9954551   6.005949
+    ## 3 Sample 23.50 1.3385116   2.762900
+    ## 4 Sample 33.50 0.7901536   1.744783
+    ## 5 Sample 40.00 1.1434433   2.203279
+    ## 6 Sample 54.75 2.1300681   6.741989
 
 -   The first two columns can contain info like ID or other data, but
     here we didn’t specify anything in Alpha() so it contains filler
@@ -920,7 +878,7 @@ shapiro.test(Data.Baby1w.Alpha$Chao)
     ##  Shapiro-Wilk normality test
     ## 
     ## data:  Data.Baby1w.Alpha$Chao
-    ## W = 0.8504, p-value = 0.0001332
+    ## W = 0.74101, p-value = 8.045e-07
 
 ``` r
 shapiro.test(Data.Baby1w.Alpha$Shannon)
@@ -930,7 +888,7 @@ shapiro.test(Data.Baby1w.Alpha$Shannon)
     ##  Shapiro-Wilk normality test
     ## 
     ## data:  Data.Baby1w.Alpha$Shannon
-    ## W = 0.96912, p-value = 0.3687
+    ## W = 0.96795, p-value = 0.3396
 
 ``` r
 shapiro.test(Data.Baby1w.Alpha$Invsimpson)
@@ -940,7 +898,7 @@ shapiro.test(Data.Baby1w.Alpha$Invsimpson)
     ##  Shapiro-Wilk normality test
     ## 
     ## data:  Data.Baby1w.Alpha$Invsimpson
-    ## W = 0.92725, p-value = 0.01645
+    ## W = 0.92705, p-value = 0.01622
 
 -   A p\<0.05 tells us that Chao1 and inverse Simpson metrics are
     non-normally distributed. As such, we have to use non-parametric
@@ -978,7 +936,7 @@ a<-BCData$BMI_Category_Final
 boxplot(chao~a,main="chao1 Index of Babies at 1 Week",ylab="Chao1 Index")
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-38-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/alpha-diversity-boxplots-1.png)
 
 -   The first argument in boxplot is the important one. This is what R
     calls a formula.
@@ -1004,7 +962,7 @@ kruskal.test(chao~a)
     ##  Kruskal-Wallis rank sum test
     ## 
     ## data:  chao by a
-    ## Kruskal-Wallis chi-squared = 1.0275, df = 2, p-value = 0.5982
+    ## Kruskal-Wallis chi-squared = 1.5463, df = 2, p-value = 0.4616
 
 -   As you can see, the input formula for this function is exactly the
     same as the input for boxplot().
@@ -1017,7 +975,7 @@ kruskal.test(chao~a)
 boxplot(shan~a,main="Shannon Index of Babies at 1 Week",ylab="Shannon Index")
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-40-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
 ``` r
 kruskal.test(shan~a)
@@ -1027,14 +985,14 @@ kruskal.test(shan~a)
     ##  Kruskal-Wallis rank sum test
     ## 
     ## data:  shan by a
-    ## Kruskal-Wallis chi-squared = 1.3943, df = 2, p-value = 0.498
+    ## Kruskal-Wallis chi-squared = 1.3595, df = 2, p-value = 0.5067
 
 ``` r
 #Inverse Simpson
 boxplot(invsimp~a, main="Inverse Simpson of Babies at 1 Week",ylab="Inverse Simpson Index")
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-40-2.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-23-2.png)
 
 ``` r
 kruskal.test(invsimp~a)
@@ -1044,7 +1002,7 @@ kruskal.test(invsimp~a)
     ##  Kruskal-Wallis rank sum test
     ## 
     ## data:  invsimp by a
-    ## Kruskal-Wallis chi-squared = 1.3455, df = 2, p-value = 0.5103
+    ## Kruskal-Wallis chi-squared = 1.3654, df = 2, p-value = 0.5053
 
 -   Maternal pre-pregnancy BMI is not significantly associated with any
     of the infant gut microbiota alpha diversity measures!
@@ -1061,27 +1019,27 @@ a<-BCData$Exclusive_BF
 boxplot(chao~a,main="Chao1 Index of Babies at 1 Week",ylab="Chao1 Index")
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-41-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/alpha-diversity-by-BF-1.png)
 
 ``` r
 wilcox.test(chao~a)
 ```
 
-    ## Warning in wilcox.test.default(x = c(72.2, 63.75, 36.5, 46, 51.5, 39, 92.5, :
+    ## Warning in wilcox.test.default(x = c(45.2, 36, 40, 44, 36.5, 31.5, 93.5, :
     ## cannot compute exact p-value with ties
 
     ## 
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  chao by a
-    ## W = 136.5, p-value = 0.3481
+    ## W = 157, p-value = 0.7506
     ## alternative hypothesis: true location shift is not equal to 0
 
 ``` r
 boxplot(shan~a,main="Shannon Index of Babies at 1 Week",ylab="Shannon Index")
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-41-2.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/alpha-diversity-by-BF-2.png)
 
 ``` r
 wilcox.test(shan~a)
@@ -1098,7 +1056,7 @@ wilcox.test(shan~a)
 boxplot(invsimp~a,main="Inverse Simpson of Babies at 1 Week",ylab="Inverse Simpson Index")
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-41-3.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/alpha-diversity-by-BF-3.png)
 
 ``` r
 wilcox.test(invsimp~a)
@@ -1121,8 +1079,8 @@ summary(aov(invsimp~a))
 ```
 
     ##             Df Sum Sq Mean Sq F value Pr(>F)
-    ## a            2   3.88   1.938   1.253  0.298
-    ## Residuals   35  54.15   1.547
+    ## a            2   3.89   1.947   1.257  0.297
+    ## Residuals   35  54.21   1.549
 
 -   We can see from the p-value that inverse Simpson diversity is not
     significantly associated with maternal pre-pregnancy BMI – we saw
@@ -1165,10 +1123,10 @@ a<-BCData$BMI_Category_Final
 Alpha.Table(Data.Baby1w.Alpha,a)
 ```
 
-    ##    Overall     Normal        Overweight    Obese        
-    ## c. "54 ± 21.5" "56.5 ± 22.3" "52.9 ± 20.7" "52.8 ± 22.7"
-    ## s. "1.4 ± 0.4" "1.5 ± 0.4"   "1.4 ± 0.3"   "1.4 ± 0.4"  
-    ## i. "3.3 ± 1.3" "3.7 ± 1.5"   "3 ± 0.9"     "3.2 ± 1.2"
+    ##    Overall       Normal        Overweight    Obese        
+    ## c. "47.4 ± 22.9" "47.6 ± 20.4" "42.9 ± 19.1" "50.6 ± 27.8"
+    ## s. "1.4 ± 0.4"   "1.5 ± 0.4"   "1.4 ± 0.3"   "1.4 ± 0.4"  
+    ## i. "3.3 ± 1.3"   "3.7 ± 1.5"   "3 ± 0.9"     "3.2 ± 1.2"
 
 -   Each row is a different alpha diversity metric. The orer from top to
     bottom is Chao1, Shannon and inverse Simpson (labelled as “c.”, “s.”
@@ -1190,7 +1148,7 @@ plot(Data.Baby1w.Alpha$Chao~BCData$Baby.Age,main="Chao1 Index of Babies at 1 Wee
 abline(lm(Data.Baby1w.Alpha$Chao~BCData$Baby.Age))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-45-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/scatter-plot-alpha-diversity-1.png)
 
 -   plot() and boxplot() work the exact same way, so I won’t describe
     the inputs here.
@@ -1215,11 +1173,11 @@ cor.test(Data.Baby1w.Alpha$Chao,BCData$Baby.Age,method="spearman")
     ##  Spearman's rank correlation rho
     ## 
     ## data:  Data.Baby1w.Alpha$Chao and BCData$Baby.Age
-    ## S = 8340.7, p-value = 0.9471
+    ## S = 9464.8, p-value = 0.4721
     ## alternative hypothesis: true rho is not equal to 0
     ## sample estimates:
     ##        rho 
-    ## 0.01129275
+    ## -0.1219545
 
 -   We see there is no significant correlation between Chao1 and baby
     age.
@@ -1231,7 +1189,7 @@ plot(Data.Baby1w.Alpha$Shannon~BCData$Baby.Age,main="Shannon Index of Babies at 
 abline(lm(Data.Baby1w.Alpha$Shannon~BCData$Baby.Age))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-47-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-25-1.png)
 
 ``` r
 cor.test(Data.Baby1w.Alpha$Shannon,BCData$Baby.Age,method="spearman")
@@ -1244,18 +1202,18 @@ cor.test(Data.Baby1w.Alpha$Shannon,BCData$Baby.Age,method="spearman")
     ##  Spearman's rank correlation rho
     ## 
     ## data:  Data.Baby1w.Alpha$Shannon and BCData$Baby.Age
-    ## S = 8768.8, p-value = 0.8167
+    ## S = 8785.9, p-value = 0.8074
     ## alternative hypothesis: true rho is not equal to 0
     ## sample estimates:
     ##         rho 
-    ## -0.03945583
+    ## -0.04147616
 
 ``` r
 plot(Data.Baby1w.Alpha$Invsimpson~BCData$Baby.Age,main="Inverse Simpson of Babies at 1 Week",ylab="Inverse Simpson Index")
 abline(lm(Data.Baby1w.Alpha$Invsimpson~BCData$Baby.Age))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-47-2.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-25-2.png)
 
 ``` r
 cor.test(Data.Baby1w.Alpha$Invsimpson,BCData$Baby.Age,method="spearman")
@@ -1268,11 +1226,11 @@ cor.test(Data.Baby1w.Alpha$Invsimpson,BCData$Baby.Age,method="spearman")
     ##  Spearman's rank correlation rho
     ## 
     ## data:  Data.Baby1w.Alpha$Invsimpson and BCData$Baby.Age
-    ## S = 8762.8, p-value = 0.8199
+    ## S = 8737.8, p-value = 0.8335
     ## alternative hypothesis: true rho is not equal to 0
     ## sample estimates:
-    ##         rho 
-    ## -0.03874277
+    ##        rho 
+    ## -0.0357717
 
 -   If you want to change the test to pearson, you would just change
     “method=‘spearman’” to “method=‘pearson’” in cor.test().
@@ -1286,8 +1244,8 @@ summary(aov(Data.Baby1w.Alpha$Invsimpson~BCData$Baby.Age))
 ```
 
     ##                 Df Sum Sq Mean Sq F value Pr(>F)
-    ## BCData$Baby.Age  1   1.77   1.773   1.276  0.266
-    ## Residuals       35  48.61   1.389               
+    ## BCData$Baby.Age  1   1.74   1.742   1.249  0.271
+    ## Residuals       35  48.79   1.394               
     ## 1 observation deleted due to missingness
 
 -   Great. We’re, like, halfway there.
@@ -1346,7 +1304,7 @@ Sor.bray.pcoa<-function(OTUS,Dim=2,Color=1,binary,Title="PCoA",...){
 df.Baby1w.Sor<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Category_Final,binary=TRUE)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-50-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/sorensen-plot-1.png)
 
 -   Cool. Before we do any stats, let’s make this graph prettier,
     starting with the point colors.
@@ -1401,7 +1359,7 @@ plot(df.Baby1w.Sor,cex.axis=1.5,cex.lab=1.5,cex.main=1,cex=2,col=1,
      pch=21,xlim=c(-.3,.55),ylim=c(-.35,.35),xlab="PC1 (16.8%)",ylab="PC2 (13.9%)",bg=Color.Baby)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-55-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-32-1.png)
 
 -   Neat. Here’s how to use plot()
     -   The x and y coordinates of the points are in the R variable
@@ -1433,7 +1391,7 @@ plot(df.Baby1w.Sor,cex.axis=1.5,cex.lab=1.5,cex.main=1,col=1,
 ordiellipse(df.Baby1w.Sor,BCData$BMI_Category_Final,col=c("#000000","#E79F00","#0072B2"),lwd=2)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-56-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/sorensen-plot-ellipses-1.png)
 
 -   ordiellipse() needs a few inputs.
     -   The PCoA data from Sor.bray.pcoa() “df.Baby1w.Sor”
@@ -1455,7 +1413,7 @@ legend(.25,-.09,c("Normal","Overweight","Obese"),
        pch=21,col=1,pt.bg=c("#000000","#E79F00","#0072B2"))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-57-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/sorensen-plot-ellipses-legend-1.png)
 
 -   There’s a lot of inputs for legend, most of which you will have to
     adjust as you go to make it look right.
@@ -1513,7 +1471,7 @@ PERMDISP<-function(OTUS,Group,binary,iters=9999){
             pretty much always good enough.
 
 ``` r
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,9999)
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,10)
 ```
 
     ## 'adonis' will be deprecated: use 'adonis2' instead
@@ -1523,17 +1481,17 @@ p$aov.tab
 ```
 
     ## Permutation: free
-    ## Number of permutations: 9999
+    ## Number of permutations: 10
     ## 
     ## Terms added sequentially (first to last)
     ## 
     ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      2    0.2748 0.13738 0.95561 0.05178 0.5538
-    ## Residuals 35    5.0317 0.14376         0.94822       
-    ## Total     37    5.3065                 1.00000
+    ## Group      2    0.2982 0.14909   1.251 0.06671 0.2727
+    ## Residuals 35    4.1712 0.11918         0.93329       
+    ## Total     37    4.4694                 1.00000
 
 ``` r
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,10)
 p$aov.tab
 ```
 
@@ -1548,10 +1506,10 @@ df.Baby1w.Sor<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$Exclusive_
 ordiellipse(df.Baby1w.Sor,groups=BCData$Exclusive_BF,col=c(1,2))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-60-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-34-1.png)
 
 ``` r
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,9999)
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,10)
 ```
 
     ## 'adonis' will be deprecated: use 'adonis2' instead
@@ -1561,31 +1519,31 @@ p$aov.tab
 ```
 
     ## Permutation: free
-    ## Number of permutations: 9999
+    ## Number of permutations: 10
     ## 
     ## Terms added sequentially (first to last)
     ## 
-    ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)  
-    ## Group      1    0.2230 0.22299  1.5792 0.04202 0.0617 .
-    ## Residuals 36    5.0835 0.14121         0.95798         
-    ## Total     37    5.3065                 1.00000         
+    ##           Df SumsOfSqs MeanSqs F.Model      R2  Pr(>F)  
+    ## Group      1    0.2205 0.22049  1.8681 0.04933 0.09091 .
+    ## Residuals 36    4.2489 0.11803         0.95067          
+    ## Total     37    4.4694                 1.00000          
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,10)
 p
 ```
 
     ## 
     ## Permutation test for homogeneity of multivariate dispersions
     ## Permutation: free
-    ## Number of permutations: 9999
+    ## Number of permutations: 10
     ## 
     ## Response: Distances
     ##           Df   Sum Sq   Mean Sq      F N.Perm Pr(>F)
-    ## Groups     1 0.004516 0.0045164 0.7008   9999 0.4051
-    ## Residuals 36 0.232013 0.0064448
+    ## Groups     1 0.005215 0.0052153 0.6332     10 0.4545
+    ## Residuals 36 0.296499 0.0082361
 
 -   Looks like infant breastfeeding status is associated with infant
     Sorensen dissimilarity.
@@ -1643,10 +1601,10 @@ df.Baby1w.Bray<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Categ
 ordiellipse(df.Baby1w.Bray,groups=BCData$BMI_Category_Final,col=c(1,2,3))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-62-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/bray-curtis-plots-bmi-1.png)
 
 ``` r
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,9999)
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,10)
 ```
 
     ## 'adonis' will be deprecated: use 'adonis2' instead
@@ -1656,29 +1614,29 @@ p$aov.tab
 ```
 
     ## Permutation: free
-    ## Number of permutations: 9999
+    ## Number of permutations: 10
     ## 
     ## Terms added sequentially (first to last)
     ## 
     ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      2    0.5359 0.26794 0.89238 0.04852 0.5585
-    ## Residuals 35   10.5087 0.30025         0.95148       
-    ## Total     37   11.0446                 1.00000
+    ## Group      2    0.5357 0.26783 0.89217 0.04851 0.5455
+    ## Residuals 35   10.5071 0.30020         0.95149       
+    ## Total     37   11.0428                 1.00000
 
 ``` r
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,FALSE,10)
 p
 ```
 
     ## 
     ## Permutation test for homogeneity of multivariate dispersions
     ## Permutation: free
-    ## Number of permutations: 9999
+    ## Number of permutations: 10
     ## 
     ## Response: Distances
     ##           Df  Sum Sq  Mean Sq      F N.Perm Pr(>F)
-    ## Groups     2 0.03033 0.015166 1.3564   9999 0.2656
-    ## Residuals 35 0.39136 0.011182
+    ## Groups     2 0.03072 0.015359 1.3758     10 0.3636
+    ## Residuals 35 0.39072 0.011163
 
 -   And for breastfeeding:
 
@@ -1687,10 +1645,10 @@ df.Baby1w.Bray<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$Exclusive
 ordiellipse(df.Baby1w.Bray,groups=BCData$Exclusive_BF,col=c(1,2))
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-63-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/bray-curtis-plots-bf-1.png)
 
 ``` r
-p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,9999)
+p<-PERMANOVA(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,10)
 ```
 
     ## 'adonis' will be deprecated: use 'adonis2' instead
@@ -1700,29 +1658,29 @@ p$aov.tab
 ```
 
     ## Permutation: free
-    ## Number of permutations: 9999
+    ## Number of permutations: 10
     ## 
     ## Terms added sequentially (first to last)
     ## 
     ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      1     0.282 0.28199 0.94323 0.02553  0.461
-    ## Residuals 36    10.763 0.29896         0.97447       
-    ## Total     37    11.045                 1.00000
+    ## Group      1    0.2786 0.27859 0.93173 0.02523 0.6364
+    ## Residuals 36   10.7642 0.29901         0.97477       
+    ## Total     37   11.0428                 1.00000
 
 ``` r
-p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,9999)
+p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,FALSE,10)
 p
 ```
 
     ## 
     ## Permutation test for homogeneity of multivariate dispersions
     ## Permutation: free
-    ## Number of permutations: 9999
+    ## Number of permutations: 10
     ## 
     ## Response: Distances
     ##           Df  Sum Sq   Mean Sq      F N.Perm Pr(>F)
-    ## Groups     1 0.00055 0.0005493 0.0455   9999 0.8272
-    ## Residuals 36 0.43447 0.0120687
+    ## Groups     1 0.00049 0.0004867 0.0402     10      1
+    ## Residuals 36 0.43574 0.0121039
 
 -   Let’s say you want to make a multi-panel figure, where there are 4
     graphs plotted on one figure.
@@ -1775,7 +1733,7 @@ text(x = -0.43, y = .43, labels = "C", xpd = NA,cex=2.5)
 plot.new()
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-65-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/multi-panel-plot-example-1.png)
 
 -   We’re missing a plot in our square, but you get the point.
 
@@ -1793,8 +1751,8 @@ Plot.Taxa<-function(OTUS,Data.PCOA,TaxName,CutOff=1,pval=0.05,...){
   ratio<-as.matrix(col/row*100)
   ratio<-cbind(TaxName,ratio)
   subset<-data.frame(ratio[ratio[,2]>=CutOff,])
-  subset<-data.frame(subset[!subset$X1=="unclassified unclassified",])
-  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset$X1])
+  subset<-data.frame(subset[!subset[,1]=="unclassified unclassified",])
+  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset[,1]])
   colname<-colnames(newOTUS)
   colnames(newOTUS)<-gsub("\\."," ",colname)
   fit<-envfit(Data.PCOA, newOTUS)
@@ -1822,16 +1780,16 @@ ordiellipse(df.Baby1w.Bray,groups=BCData$BMI_Category_Final,col=c(1,2,3))
 Plot.Taxa(Data.Baby1w[,-c(1:3)],df.Baby1w.Bray,TaxName,1,0.05)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-67-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/plot-envfit-1.png)
 
-    ## unclassified Enterobacteriaceae                   Bacteroides   
-    ##                       0.5423450                       0.4141612 
-    ##               Bifidobacterium                 Parabacteroides   
-    ##                       0.4590249                       0.1495672 
-    ##   Clostridium_sensu_stricto_1            Escherichia Shigella   
-    ##                       0.5509327                       0.9282753 
-    ##                  Enterococcus   
-    ##                       0.2304001
+    ## unclassified Enterobacteriaceae                     Bacteroides 
+    ##                       0.5469686                       0.4122712 
+    ##                 Bifidobacterium                 Parabacteroides 
+    ##                       0.4585372                       0.1494442 
+    ##     Clostridium_sensu_stricto_1            Escherichia Shigella 
+    ##                       0.5506705                       0.9294811 
+    ##                    Enterococcus 
+    ##                       0.2384338
 
 -   What this is showing is the directionality of the bacterial
     abundances; the arrows point towards samples that have a higher
@@ -1870,9 +1828,9 @@ Subset.Taxa<-function(OTUS,TaxName,CutOff=1){
   ratio<-as.matrix(col/row*100)
   ratio<-cbind(TaxName,ratio)
   subset<-data.frame(ratio[ratio[,2]>=CutOff,])
-  subset<-data.frame(subset[!subset$X1=="unclassified unclassified",])
-  subset<-data.frame(subset[!grepl("uncultured_ge",subset$X1),])
-  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset$X1])
+  subset<-data.frame(subset[!subset[,1]=="unclassified unclassified",])
+  subset<-data.frame(subset[!grepl("uncultured_ge",subset[,1]),])
+  newOTUS<-data.frame(OTUS[,colnames(OTUS) %in% subset[,1]])
   colname<-colnames(newOTUS)
   colnames(newOTUS)<-gsub("\\."," ",colname)
   return(newOTUS)
@@ -2055,7 +2013,7 @@ temp<-NB.pairwise(newOTUS,Group)
 p.plot(temp)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-74-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/post-hoc-test-and-plotting-pvalues-1.png)
 
 -   Wow. Amazing. This graph is telling you what bacterial taxa are
     significantly different between “Normal” and the other two BMI
@@ -2089,7 +2047,7 @@ temp<-NB.pairwise(newOTUS,Group)
 p.plot(temp)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-76-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-42-1.png)
 
 -   Finally, let’s put all our bacterial abundances in a table for easy
     presentation with NB.table().
@@ -2121,33 +2079,33 @@ test
 ```
 
     ##                                         overall       Overweight   
-    ##  [1,] "unclassified Enterobacteriaceae" "13.1 ± 19.2" "15.6 ± 25.3"
-    ##  [2,] "Bacteroides  "                   "8.7 ± 13.1"  "8.1 ± 14.1" 
-    ##  [3,] "Bifidobacterium  "               "11.3 ± 15.6" "15.2 ± 19.5"
-    ##  [4,] "Megasphaera  "                   "5.8 ± 17.3"  "6 ± 19"     
-    ##  [5,] "Veillonella  "                   "3.9 ± 9.6"   "5.8 ± 15.9" 
-    ##  [6,] "Parabacteroides  "               "3.4 ± 9.2"   "1.4 ± 2.6"  
-    ##  [7,] "Streptococcus  "                 "3.6 ± 6.2"   "0.9 ± 1.3"  
-    ##  [8,] "Clostridium_sensu_stricto_1  "   "9.2 ± 14.6"  "12.6 ± 18.6"
-    ##  [9,] "Escherichia Shigella  "          "21.9 ± 24.4" "19.8 ± 20"  
-    ## [10,] "Akkermansia  "                   "1.1 ± 6.3"   "0 ± 0"      
-    ## [11,] "Staphylococcus  "                "2.6 ± 5.7"   "2.1 ± 2.5"  
-    ## [12,] "Enterococcus  "                  "1.1 ± 2.3"   "0.7 ± 1.6"  
-    ## [13,] "Klebsiella  "                    "6.8 ± 14.7"  "4.3 ± 9.6"  
+    ##  [1,] "unclassified Enterobacteriaceae" "13.1 ± 19.2" "15.6 ± 25.2"
+    ##  [2,] "Bacteroides"                     "8.7 ± 13.1"  "8 ± 14.1"   
+    ##  [3,] "Bifidobacterium"                 "11.3 ± 15.6" "15.3 ± 19.6"
+    ##  [4,] "Megasphaera"                     "5.8 ± 17.3"  "6 ± 19"     
+    ##  [5,] "Veillonella"                     "3.9 ± 9.6"   "5.8 ± 15.8" 
+    ##  [6,] "Parabacteroides"                 "3.4 ± 9.1"   "1.4 ± 2.6"  
+    ##  [7,] "Streptococcus"                   "3.6 ± 6.2"   "0.9 ± 1.2"  
+    ##  [8,] "Clostridium_sensu_stricto_1"     "9.2 ± 14.6"  "12.6 ± 18.6"
+    ##  [9,] "Escherichia Shigella"            "21.9 ± 24.5" "19.9 ± 20.1"
+    ## [10,] "Akkermansia"                     "1.1 ± 6.3"   "0 ± 0"      
+    ## [11,] "Staphylococcus"                  "2.6 ± 5.7"   "2.1 ± 2.5"  
+    ## [12,] "Enterococcus"                    "1.1 ± 2.3"   "0.8 ± 1.7"  
+    ## [13,] "Klebsiella"                      "6.8 ± 14.7"  "4.3 ± 9.5"  
     ##       Normal        Obese        
-    ##  [1,] "6.4 ± 10.6"  "16.5 ± 19.3"
-    ##  [2,] "13.2 ± 14"   "5.6 ± 11.5" 
-    ##  [3,] "12.4 ± 17.2" "7.5 ± 10.5" 
-    ##  [4,] "0.1 ± 0.3"   "10.1 ± 22.1"
-    ##  [5,] "4.8 ± 7.1"   "1.8 ± 4.1"  
+    ##  [1,] "6.4 ± 10.7"  "16.5 ± 19.4"
+    ##  [2,] "13.3 ± 14"   "5.6 ± 11.4" 
+    ##  [3,] "12.5 ± 17.2" "7.5 ± 10.5" 
+    ##  [4,] "0.1 ± 0.2"   "10.1 ± 22.1"
+    ##  [5,] "4.8 ± 7"     "1.8 ± 4.1"  
     ##  [6,] "3.5 ± 6.7"   "4.7 ± 13.3" 
-    ##  [7,] "7.1 ± 9.2"   "2.8 ± 4.3"  
-    ##  [8,] "6.6 ± 9.6"   "8.8 ± 15.1" 
+    ##  [7,] "7.1 ± 9.3"   "2.8 ± 4.2"  
+    ##  [8,] "6.6 ± 9.5"   "8.9 ± 15.1" 
     ##  [9,] "28.1 ± 28.3" "18.4 ± 24.7"
-    ## [10,] "0 ± 0"       "2.7 ± 10.1" 
+    ## [10,] "0 ± 0"       "2.7 ± 10"   
     ## [11,] "5.3 ± 9.4"   "0.7 ± 1.4"  
-    ## [12,] "1.2 ± 2.6"   "1.4 ± 2.5"  
-    ## [13,] "5.3 ± 13"    "9.7 ± 18.9"
+    ## [12,] "1.2 ± 2.7"   "1.4 ± 2.5"  
+    ## [13,] "5.3 ± 13"    "9.8 ± 18.9"
 
 -   I added a couple more things below that you may or may not need to
     use. It mostly makes neat figures.
@@ -2186,13 +2144,13 @@ stepplot.pc1<-function(sor.bray.df,sample_ids,col=1,pc="PC1",...){
 df.Baby1w.Bray<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Category_Final,binary=FALSE)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-80-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/sorensen-pc1-step-plot-1.png)
 
 ``` r
 stepplot.pc1(df.Baby1w.Bray,BCData$Group,BCData$BMI_Category_Final)
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-80-2.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/sorensen-pc1-step-plot-2.png)
 
 -   This creates a plot showing the PC1 position for each participant.
 
@@ -2211,7 +2169,7 @@ TaxName<-read.table("Wheat_tax_names.taxonomy",header=TRUE)
 TaxName<-Edit.Taxname(TaxName$Taxonomy,1)
 ```
 
-    ## Warning: Expected 2 pieces. Additional pieces discarded in 1230 rows [1, 2, 3, 4, 5, 6,
+    ## Warning: Expected 6 pieces. Additional pieces discarded in 1230 rows [1, 2, 3, 4, 5, 6,
     ## 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...].
 
 ``` r
@@ -2286,7 +2244,7 @@ bubble.plot(OTUs_group1,OTUs_group2,ids_group1,ids_group2)
     ## Warning in legend(y = max(as.integer(df$variable)/1.5), x =
     ## max(as.integer(df$ids)) + : NAs introduced by coercion
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-83-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/bubble-plot-of-wheat-data-1.png)
 
 -   You need 4 inputs for this code.
     -   The first two are OTU tables for your comparison
@@ -2331,7 +2289,7 @@ TaxName<-read.table("Wheat_tax_names.taxonomy",header=TRUE)
 TaxName<-Edit.Taxname(TaxName$Taxonomy,1)
 ```
 
-    ## Warning: Expected 2 pieces. Additional pieces discarded in 1230 rows [1, 2, 3, 4, 5, 6,
+    ## Warning: Expected 6 pieces. Additional pieces discarded in 1230 rows [1, 2, 3, 4, 5, 6,
     ## 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...].
 
 ``` r
@@ -2349,4 +2307,4 @@ paired.arrows(bray.df, id=id, group=time, term1="A", term2="B")
 paired.arrows(bray.df, id=id, group=time, term1="B", term2="C")
 ```
 
-![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-85-1.png)
+![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/plot-pcoa-of-paired-samples-1.png)
