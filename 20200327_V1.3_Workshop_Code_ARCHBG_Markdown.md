@@ -1,18 +1,66 @@
-# Basics-of-Microbiome-Data-Analysis
+-   [1
+    Basics-of-Microbiome-Data-Analysis](#basics-of-microbiome-data-analysis)
+    -   [1.1 Author’s note 2023-12-11](#authors-note-2023-12-11)
+-   [2 Introduction](#introduction)
+-   [3 Installing R and R packages](#installing-r-and-r-packages)
+-   [4 Setting up the R environment](#setting-up-the-r-environment)
+    -   [4.1 Importing OTU data](#importing-otu-data)
+    -   [4.2 Reading in a text file](#reading-in-a-text-file)
+    -   [4.3 Basic commands to interact with R
+        dataframes](#basic-commands-to-interact-with-r-dataframes)
+-   [5 Subsampling (rarefying) your
+    OTUS](#subsampling-rarefying-your-otus)
+    -   [5.1 Writing the rarefied table to a
+        file](#writing-the-rarefied-table-to-a-file)
+    -   [5.2 Plotting rarefaction](#plotting-rarefaction)
+-   [6 Data set-up and exploration](#data-set-up-and-exploration)
+    -   [6.1 Editing text with regex](#editing-text-with-regex)
+    -   [6.2 Merging data to ensure participant ID’s match by
+        row](#merging-data-to-ensure-participant-ids-match-by-row)
+    -   [6.3 Changing factor level
+        orders](#changing-factor-level-orders)
+    -   [6.4 Editing taxonomy names](#editing-taxonomy-names)
+-   [7 Data analysis](#data-analysis)
+    -   [7.1 Stacked Barplot of OTU
+        Abundances](#stacked-barplot-of-otu-abundances)
+    -   [7.2 Alpha Diversity](#alpha-diversity)
+    -   [7.3 Categorical variables](#categorical-variables)
+        -   [7.3.1 Alpha diversity summary
+            table](#alpha-diversity-summary-table)
+    -   [7.4 Continuous variables](#continuous-variables)
+-   [8 Beta Diversity](#beta-diversity)
+    -   [8.1 Using custom colors in
+        plots](#using-custom-colors-in-plots)
+    -   [8.2 Adding group-wise ellipses and a
+        legend](#adding-group-wise-ellipses-and-a-legend)
+    -   [8.3 Beta diversity statistics: PERMANOVA and
+        PERMDISP](#beta-diversity-statistics-permanova-and-permdisp)
+    -   [8.4 Write plots to image file](#write-plots-to-image-file)
+    -   [8.5 Multipanel plots](#multipanel-plots)
+    -   [8.6 Regressing variables against
+        ordination](#regressing-variables-against-ordination)
+-   [9 Negative binomial regression](#negative-binomial-regression)
+    -   [9.1 Post-hoc test for pair-wise group
+        differences](#post-hoc-test-for-pair-wise-group-differences)
+    -   [9.2 Negative binomial summary table of
+        results](#negative-binomial-summary-table-of-results)
+-   [10 Extra code](#extra-code)
+    -   [10.1 Step plot](#step-plot)
+    -   [10.2 Bubble plot](#bubble-plot)
+        -   [10.2.1 Draw arrows between paired
+            samples](#draw-arrows-between-paired-samples)
+
+# 1 Basics-of-Microbiome-Data-Analysis
 
 This code is a primer on basic microbiota analysis methods as well as a
 primer for anyone who is new to R. We will go over basic R functions,
 rarefaction of microbiota count data, alpha diversity, beta diversity,
 negative binomial regression, as well as the associated plots, tables,
-and statistics.
+and statistics. Check out [part
+2](https://github.com/kameron-sugino/More-Microbiome-Analysis-Methods.git)
+for more analysis methods.
 
-## Things you’ll need
-
--   Base R: <https://www.r-project.org/>
--   R Studio: <https://rstudio.com/products/rstudio/download/>
--   The ARCHBG and Wheat data
-
-# 0) Author’s note 2023-12-11
+## 1.1 Author’s note 2023-12-11
 
 -   Hello! Welcome to my first tutorial on the basics of microbiome data
     analysis! This is a raw upload of a workshop tutorial I wrote while
@@ -22,18 +70,15 @@ and statistics.
     improvements to these files. If you have any suggestions, please let
     me know!
 
-# 1) Introduction
+# 2 Introduction
 
--   This code is meant to be a primer on R code that is specifically
-    geared towards how to implement and understand the Comstock lab’s
-    microbiota analysis methods. There are many things I will not cover
-    here, R code that I don’t really understand fully and things that I
-    just won’t explain very well. For all of these things (and more!),
-    there is always Google.
+-   This code is meant to be a primer on R code specifically focused on
+    microbiota analysis methods.
 
--   The data used here was used in the ARCH/BABY gut manuscript (doi:
-    10.1371/journal.pone.0213733). The data and code used for that paper
-    can be found in the supplementary materials section.
+-   The data used here was used in the [ARCH/BABY gut
+    manuscript](doi:%2010.1371/journal.pone.0213733). The data and code
+    used for that paper can be found in the supplementary materials
+    section.
 
     -   Briefly, this is fecal microbiota data from pregnant women
         (Trimester 3) and their children (between a few days to 3 months
@@ -50,13 +95,18 @@ and statistics.
     -   Note that the data used here is the output produced from the
         “Phylotypes” section of the mothur SOP.
 
-# 2) Installing R Packages
+# 3 Installing R and R packages
 
--   Let’s start by installing the packages you’ll need for this.
-    -   Packages in R are meant to make your job easier. They are
-        pre-written lines of code meant to do a specific job without you
-        needing to code (or fully understand) how to implement your
-        method of interest.
+-   Things you’ll need
+    -   [Base R](https://www.r-project.org/)
+    -   [R Studio](https://rstudio.com/products/rstudio/download/)
+    -   The ARCHBG and Wheat data (provided)
+-   Now that R and R studio are installed, let’s install the packages in
+    R you’ll need.
+    -   Packages are meant to make your job easier. They are pre-written
+        lines of code meant to do a specific job without you needing to
+        code (or fully understand) how to implement your method of
+        interest.
     -   To do this, we use the function install.packages() with the
         package name (in quotations) inserted between the parentheses
 
@@ -80,10 +130,10 @@ install.packages("ggplot2")
 help(package=vegan)
 ```
 
-# 3) Importing OTU data
+# 4 Setting up the R environment
 
--   Before we get to the data, let’s make sure R knows to use the
-    packages we just installed.
+-   Before we get to the data, let’s make sure R loads the packages we
+    just installed.
 
 ``` r
 require(vegan)
@@ -94,6 +144,8 @@ require(car)
 require(dunn.test)
 require(ggplot2)
 ```
+
+## 4.1 Importing OTU data
 
 -   Cool. Now R is ready to use the functions in these packages. Let’s
     get to reading our data in.
@@ -112,6 +164,8 @@ require(ggplot2)
 knitr::opts_knit$set(root.dir = "C:/Users/ksugino/Desktop/Github_projects/Basics-of-Microbiome-Data-Analysis/Data/")
 ```
 
+## 4.2 Reading in a text file
+
 ``` r
 setwd('C:/Users/ksugino/Desktop/Github_projects/Basics-of-Microbiome-Data-Analysis/Data/')
 Data.Raw<-read.table('otu_table.txt',fill=TRUE,header=TRUE)
@@ -129,6 +183,9 @@ Data.Raw<-read.table('otu_table.txt',fill=TRUE,header=TRUE)
     -   “fill” is making sure R inputs our matrix correctly by filling
         in any empty spaces that might be in our file.
     -   “header” tells R that our file has a header.
+
+## 4.3 Basic commands to interact with R dataframes
+
 -   Let’s look at the first 6 rows and 10 columns of the data
 
 ``` r
@@ -147,17 +204,16 @@ Data.Raw[c(1:6),c(1:10)]
     “numOtus”, while the rest of the columns contain the number of reads
     (i.e. counts) for each OTU. Briefly, an OTU stands for “Operational
     Taxonomic Unit” and I will be using it to refer to the bacterial
-    counts in our dataset.
+    counts in our data set.
     -   The label column tells you what taxonomic level you are looking
         at
-        -   This dataset contains the OTU information from Kingdom to
+        -   This data set contains the OTU information from Kingdom to
             Genus
     -   Group tells you the sample info.
-        -   In this case, our IDs are labeled as “ID#-timepoint”, where
+        -   In this case, our IDs are labeled as “ID#-time point”, where
             “1w” are infant samples and “M” are the maternal samples.
-    -   numOtus is just the number of OTU columns there are in this
-        dataset. It’s telling us that there are 439 uniquely identified
-        OTUS
+    -   numOtus is just the number of OTU columns there are in this data
+        set. It’s telling us that there are 439 uniquely identified OTUS
         -   You can tell which rows contain which taxonomic level by the
             column named “label”
         -   A value of 1 = genus, 2 = family, and up to 5 = phylum.
@@ -280,12 +336,8 @@ Data.Raw$Group
     ## [498] "55-M"    "56-1wb"  "56-M"    "57-1w"   "57-M"    "60-1w"   "60-M"   
     ## [505] "62-1w"   "62-M"    "63-1w"   "63-M"    "64-1w"   "64-M"
 
--   I’m pretty bad at explaining things like this, so I’m sure you’re
-    still very confused. Sorry. You’ll get the hang of it as you use R
-    more, I promise.
-
--   Anyway, we want the genus-level info, so we’re looking for the rows
-    with a “1” under the “label” column.
+-   We want the genus-level info, so we’re looking for the rows with a
+    “1” under the “label” column.
 
 ``` r
 Data.Raw<-Data.Raw[Data.Raw$label==1,]
@@ -308,7 +360,7 @@ Data.Raw<-Data.Raw[Data.Raw$label==1,]
         to tell R that 2 is now equivalent to 3, while 2==3 is asking R
         if 2 is equal to 3).
 
-# 4) Subsampling your OTUS
+# 5 Subsampling (rarefying) your OTUS
 
 -   Let’s take a look at how many reads this raw data has per sample:
 
@@ -394,7 +446,7 @@ summary(rowSums(Subsample))
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   14987   14994   14996   14996   14997   15003
+    ##   14983   14994   14996   14996   14998   15004
 
 \*Remember, we rounded the averaged subsample data, so there will be a
 little bit of variation in the number of reads per sample, but nothing
@@ -403,6 +455,8 @@ large enough to worry about.
 -   Now that we have the subsampled data, let’s attach the sample info
     columns and create a new file so we don’t have to run Subsample()
     again.
+
+## 5.1 Writing the rarefied table to a file
 
 ``` r
 Data.Subsample<-cbind(Data.Group, Subsample)
@@ -431,6 +485,8 @@ write.table(Data.Subsample, 'Data.Subsample.txt', quote=FALSE, row.names=FALSE)
         you have to use a small number of reads (e.g., 1,000 reads may
         not be enough depth in some sample types).
 -   To do this, we will make a rarefaction curve.
+
+## 5.2 Plotting rarefaction
 
 ``` r
 Color<-ifelse(grepl("1w", Data.Subsample$Group),2, ifelse(grepl("-M|-m|M", Data.Subsample$Group),1,3))
@@ -483,7 +539,7 @@ Data.Mom<-Data.Subsample[grepl("M|m", Data.Subsample$Group),]
 write.table(Data.Mom, 'Data.Subsample.Mom.txt', quote=FALSE, row.names=FALSE)
 ```
 
-# 5) Importing data
+# 6 Data set-up and exploration
 
 -   Great. Now we can work from these files directly instead of running
     all of the previous steps to get to this point.
@@ -542,6 +598,8 @@ BCData$Group
         to exclude everything but the ID number.
 -   Let’s use the gsub() command to do this.
 
+## 6.1 Editing text with regex
+
 ``` r
 Data.Mom$Group<-gsub('-.*',"",Data.Mom$Group)
 Data.Baby1w$Group<-gsub('-.*',"",Data.Baby1w$Group)
@@ -593,6 +651,8 @@ BCData$Group
     ## [21] "38"   "39"   "40"   "41"   "42"   "43"   "44T1" "45"   "46"   "49"  
     ## [31] "51"   "52"   "55"   "56"   "57"   "60"   "62"   "63"   "64"
 
+## 6.2 Merging data to ensure participant ID’s match by row
+
 -   Awesome. Now that they match (ignore the quotations, they don’t
     matter for this application), we’re going to use merge() to combine
     our datasets by sample ID. This makes it so participants that have
@@ -618,6 +678,9 @@ BCData<-temp2[,c(1,(ncol(temp)+1):ncol(temp2))]
     -   If your datasets have different column names, you can use “by.x”
         and “by.y” to specify the column names in the first and second
         variables, respectively.
+
+## 6.3 Changing factor level orders
+
 -   Alright, we’re getting there. Let’s take a look at one of our
     variables of interest, maternal pre-pregnancy BMI category.
 
@@ -660,6 +723,9 @@ levels(BCData$BMI_Category_Final)
         -   Since the order of our levels was Normal, Obese, Overweight,
             we want Normal to stay where it is in the order, but move
             the order of overweight and obese like so: \[c(1,3,2)\]
+
+## 6.4 Editing taxonomy names
+
 -   Of course, before we can do that, we have to read in the OTU names.
     -   You may have noticed previously that the OTUs didn’t have a
         bacterial name, just a number. Let’s get the list of bacteria
@@ -744,14 +810,19 @@ head(TaxName)
     ## [3] "unclassified Lachnospiraceae"    "Bifidobacterium"                
     ## [5] "Megasphaera"                     "Veillonella"
 
--   Great, looks like some bacterial names, right? You’ll notice some
-    are named “unclassified”. It just means that the OTU couldn’t be
-    identified to the genus level, only to the family level.
+-   You’ll notice some are named “unclassified”. It just means that the
+    OTU couldn’t be identified to the genus level, only to the family
+    level. If you want a more detailed ID, you can BLAST the sequences.
+    See
+    [this](https://github.com/kameron-sugino/BLAST-ing-your-sequence-for-more-specific-taxonomic-IDs.git)
+    tutorial for more info
 
-# 6) Stacked Barplot of OTU Abundances
+# 7 Data analysis
 
--   So, what’s this data look like? Let’s take a look at it in the most
-    overwhelming way possible, with the StackedBarPlot() function:
+Now that we have our data set up, let’s take a look at it in the most
+overwhelming way possible, with the StackedBarPlot() function:
+
+## 7.1 Stacked Barplot of OTU Abundances
 
 ``` r
 StackedBarPlot<-function(OTU,Group="Samples",TaxName,N=19,Title="Stacked Bar Chart"){
@@ -816,7 +887,7 @@ a<-StackedBarPlot(OTU=Data.Baby1w[,-c(1:3)],TaxName=TaxName)
     infants and that they are dominated by a few OTUs that are highly
     abundant.
 
-# 7) Alpha Diversity
+## 7.2 Alpha Diversity
 
 -   Not super useful. Let’s start doing some of the statistical stuff,
     starting with alpha diversity.
@@ -929,6 +1000,8 @@ invsimp<-Data.Baby1w.Alpha$Invsimpson
 ``` r
 a<-BCData$BMI_Category_Final
 ```
+
+## 7.3 Categorical variables
 
 -   Great. We can finally get started with boxplot()
 
@@ -1088,10 +1161,13 @@ summary(aov(invsimp~a))
     -   In general, if the data are normally distributed (if the
         shapiro.test() p\>0.05), you would use an ANOVA and if they
         aren’t, use the non-parametric kruskal.test() or wilcox.test()
+
+### 7.3.1 Alpha diversity summary table
+
 -   Let’s say you want to make a table out of this with the means and
     standard deviation.
     -   A reviewer asked us to remove a single participant from out
-        analysis, \*so I had to redo all of the tables manuall\*\*.
+        analysis, \*so I had to redo all of the tables manually\*\*.
     -   So, I wrote some code to make these sorts of tables for me
         because that kinda sucked.
 
@@ -1137,6 +1213,9 @@ Alpha.Table(Data.Baby1w.Alpha,a)
         overweight category’s inverse Simpson value.
         -   This happens when the number after a decimal is 0. This
             number should be 3.0, but R only outputs a 3
+
+## 7.4 Continuous variables
+
 -   We’ve seen what to do with categorical variables, but what about
     continuous ones?
     -   It’s pretty much the same procedure as before, but we will be
@@ -1250,11 +1329,13 @@ summary(aov(Data.Baby1w.Alpha$Invsimpson~BCData$Baby.Age))
 
 -   Great. We’re, like, halfway there.
 
-# 8) Beta Diversity
+# 8 Beta Diversity
 
 -   Let’s do beta diversity now. There’s one function for both Sorensen
     (presence/absence) and Bray-Curtis (abundance) dissimilarities and
-    to produce the PCoA plot.
+    to produce the PCoA plot. There are many, many other options for
+    both dimension reduction and ordination methods (e.g., UNIFRACE,
+    t-SNE, PLS-DA, to name a few)
     -   Let’s see what Sor.bray.pcoa() does:
 
 ``` r
@@ -1276,7 +1357,7 @@ Sor.bray.pcoa<-function(OTUS,Dim=2,Color=1,binary,Title="PCoA",...){
 }
 ```
 
--   Sor.bray.pcoa() takes 6 arguments:
+-   Sor.bray.pcoa() takes several arguments:
     -   “OTUS” is your OTU table, just like when we calculated alpha
         diversity.
     -   “Dim” is the number of dimensions you want calculated. Usually
@@ -1305,6 +1386,8 @@ df.Baby1w.Sor<-Sor.bray.pcoa(Data.Baby1w[,-c(1:3)],Dim=2,Color=BCData$BMI_Catego
 ```
 
 ![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/sorensen-plot-1.png)
+
+## 8.1 Using custom colors in plots
 
 -   Cool. Before we do any stats, let’s make this graph prettier,
     starting with the point colors.
@@ -1381,6 +1464,9 @@ plot(df.Baby1w.Sor,cex.axis=1.5,cex.lab=1.5,cex.main=1,cex=2,col=1,
             and PC2.
     -   Finally, “bg” allows us to fill in the center of our open
         circles with a color of our choosing.
+
+## 8.2 Adding group-wise ellipses and a legend
+
 -   Our plot could still use a few things, like ellipses around our
     different groups.
     -   We can do this using ordiellipse()
@@ -1431,6 +1517,9 @@ legend(.25,-.09,c("Normal","Overweight","Obese"),
         shape you want (21=open circle), what color you want it to be
         (1=black) and what you want the point fill color to be (our
         custom colors)
+
+## 8.3 Beta diversity statistics: PERMANOVA and PERMDISP
+
 -   Let’s run some stats with PERMANOVA() and PERMDISP()
     -   PERMANOVA() compares the centroids of each group, where a
         centroid is the center point of the ellipse.
@@ -1545,6 +1634,8 @@ p
     ## Groups     1 0.005215 0.0052153 0.6332     10 0.4545
     ## Residuals 36 0.296499 0.0082361
 
+## 8.4 Write plots to image file
+
 -   Looks like infant breastfeeding status is associated with infant
     Sorensen dissimilarity.
 -   Let’s output the BMI figure as a png with png()
@@ -1619,7 +1710,7 @@ p$aov.tab
     ## Terms added sequentially (first to last)
     ## 
     ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      2    0.5357 0.26783 0.89217 0.04851 0.5455
+    ## Group      2    0.5357 0.26783 0.89217 0.04851 0.4545
     ## Residuals 35   10.5071 0.30020         0.95149       
     ## Total     37   11.0428                 1.00000
 
@@ -1663,7 +1754,7 @@ p$aov.tab
     ## Terms added sequentially (first to last)
     ## 
     ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      1    0.2786 0.27859 0.93173 0.02523 0.6364
+    ## Group      1    0.2786 0.27859 0.93173 0.02523 0.3636
     ## Residuals 36   10.7642 0.29901         0.97477       
     ## Total     37   11.0428                 1.00000
 
@@ -1679,8 +1770,10 @@ p
     ## 
     ## Response: Distances
     ##           Df  Sum Sq   Mean Sq      F N.Perm Pr(>F)
-    ## Groups     1 0.00049 0.0004867 0.0402     10      1
+    ## Groups     1 0.00049 0.0004867 0.0402     10 0.5455
     ## Residuals 36 0.43574 0.0121039
+
+## 8.5 Multipanel plots
 
 -   Let’s say you want to make a multi-panel figure, where there are 4
     graphs plotted on one figure.
@@ -1737,13 +1830,14 @@ plot.new()
 
 -   We’re missing a plot in our square, but you get the point.
 
+## 8.6 Regressing variables against ordination
+
 -   So, what if you’re interested in seeing what bacteria are associated
     with your Bray-Curtis PCoA?
-
 -   We can use this code, Plot.Taxa()
 
 ``` r
-Plot.Taxa<-function(OTUS,Data.PCOA,TaxName,CutOff=1,pval=0.05,...){
+Plot.Taxa<-function(OTUS,Data.PCOA,TaxName,CutOff=1,pval=0.05, ...){
   colnames(OTUS)<-TaxName
   row<-rowSums(OTUS)
   row<-sum(row)
@@ -1794,24 +1888,21 @@ Plot.Taxa(Data.Baby1w[,-c(1:3)],df.Baby1w.Bray,TaxName,1,0.05)
 -   What this is showing is the directionality of the bacterial
     abundances; the arrows point towards samples that have a higher
     abundance of that bacteria
-
     -   For example, the samples at the top of the plot are much more
         abundant in Escherichia than samples at the bottom
-
 -   The output under the plot is telling you the R-squared value of that
     bacteria (i.e., how well the bacterial correlation fits your PCoA
     plot)
 
+# 9 Negative binomial regression
+
 -   Let’s test for differences in the abundances of each bacteria by
     group. To do this, we will use a negative binomial model.
-
     -   A negative binomial model is used for count data that has a high
         variance. In our case, the variance is often times equal to or
         much greater than the mean abundance of any given bacteria
-
 -   Before we get to the negative binomial model, we’re going to remove
     our low-abundance OTUS.
-
     -   There are many bacteria that are in our samples at a very low
         abundance. We aren’t excluding them because they aren’t
         important per se, but because their effect on the gut and their
@@ -1899,16 +1990,20 @@ p<-NB.overall(newOTUS,Group)
 -   So. You’ll probably get an error message that says something like
     this:
 
+```
 ### Warning message:
-
-### In theta.ml(Y, mu, sum(w), w, limit = control*m**a**x**i**t*, *t**r**a**c**e* = *c**o**n**t**r**o**l*trace \> : iteration limit reached
+### In theta.ml(Y, mu, sum(w), w, limit = control$maxit, trace = control$trace >  : iteration limit reached
+```
 
 -   What this basically means is your taxa distribution is treated as
     Poisson (another type of distribution that is used to interpret
     count data).
 
-    -   It’s really a problem when this occurs, it’s just telling you
-        your data distribution is not what it expected.
+    -   It’s necessarily a problem when this occurs, but it’s telling
+        you your data distribution is not what it expected. You can try
+        to implement a Poisson regression for these taxa separately, and
+        may want to consider running a zero-inflated model with taxa
+        with sparse data (many zero values)
 
 -   Other things to note are the p.adjust() function, which is false
     discovery rate adjusting the p-values we generated.
@@ -1943,6 +2038,8 @@ p<-NB.overall(newOTUS,Group)
 
     -   In other words, we need to compare Normal-Overweight,
         Normal-Obese and Overweight-Obese.
+
+## 9.1 Post-hoc test for pair-wise group differences
 
 -   So, I can’t guarantee that this code will work in all cases, but
     it’s so much nicer and easier to use than what I had before. Maybe
@@ -2015,9 +2112,8 @@ p.plot(temp)
 
 ![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/post-hoc-test-and-plotting-pvalues-1.png)
 
--   Wow. Amazing. This graph is telling you what bacterial taxa are
-    significantly different between “Normal” and the other two BMI
-    categories.
+-   This graph is telling you what bacterial taxa are significantly
+    different between “Normal” and the other two BMI categories.
     -   Sometimes you’ll see that a pairwise comparison is significant
         while the overall p-value (which we calculated previously) is
         not. If this is the case, ignore the pairwise significance.
@@ -2048,6 +2144,8 @@ p.plot(temp)
 ```
 
 ![](20200327_V1.3_Workshop_Code_ARCHBG_Markdown_files/figure-markdown_github/unnamed-chunk-42-1.png)
+
+## 9.2 Negative binomial summary table of results
 
 -   Finally, let’s put all our bacterial abundances in a table for easy
     presentation with NB.table().
@@ -2107,6 +2205,10 @@ test
     ## [12,] "1.2 ± 2.7"   "1.4 ± 2.5"  
     ## [13,] "5.3 ± 13"    "9.8 ± 18.9"
 
+# 10 Extra code
+
+## 10.1 Step plot
+
 -   I added a couple more things below that you may or may not need to
     use. It mostly makes neat figures.
     -   Let’s start with making a step plot from our PCoA data
@@ -2154,10 +2256,11 @@ stepplot.pc1(df.Baby1w.Bray,BCData$Group,BCData$BMI_Category_Final)
 
 -   This creates a plot showing the PC1 position for each participant.
 
+## 10.2 Bubble plot
+
 -   The other plot we’re going to make is a plot showing the change in
     microbiota abundance between two timepoint for each individual. For
     this, we’re going to switch to the SPICE dataset.
-
     -   The SPICE data collected microbiota data from 3 timepoints per
         participant, allowing us to look for changes in abundance over
         time
@@ -2253,6 +2356,9 @@ bubble.plot(OTUs_group1,OTUs_group2,ids_group1,ids_group2)
         we can match each participant to themselves. The results show
         how the taxa abundances changed between the two point using the
         size and fill of the circles.
+
+### 10.2.1 Draw arrows between paired samples
+
 -   Next is code to draw arrows between participant samples on a PCoA
     plot
 
