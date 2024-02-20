@@ -11,7 +11,7 @@ output:
 
 # Basics-of-Microbiome-Data-Analysis
 
-This code is a primer on basic microbiota analysis methods as well as a primer for anyone who is new to R. We will go over basic R functions, rarefaction of microbiota count data, alpha diversity, beta diversity, negative binomial regression, as well as the associated plots, tables, and statistics. Check out [part 2](https://github.com/kameron-sugino/More-Microbiome-Analysis-Methods.git) for more analysis methods.
+This code is a primer on basic microbiota analysis methods as well as a primer for anyone who is new to R. We will go over basic R functions, rarefaction of microbiota count data, alpha diversity, beta diversity, negative binomial regression, as well as the associated plots, tables, and statistics. Check out [part 2](https://github.com/kameron-sugino/More-Microbiome-Analysis-Methods.git) for more analysis methods covering repeated measures regression, basic regression model selection criteria using AICc, PCoA model selection criteria using AICc, and variable selection using LASSO regression.
 
 ## Author's note 2023-12-11
 

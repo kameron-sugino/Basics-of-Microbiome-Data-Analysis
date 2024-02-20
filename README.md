@@ -58,7 +58,9 @@ rarefaction of microbiota count data, alpha diversity, beta diversity,
 negative binomial regression, as well as the associated plots, tables,
 and statistics. Check out [part
 2](https://github.com/kameron-sugino/More-Microbiome-Analysis-Methods.git)
-for more analysis methods.
+for more analysis methods covering repeated measures regression, basic
+regression model selection criteria using AICc, PCoA model selection
+criteria using AICc, and variable selection using LASSO regression.
 
 ## 1.1 Author’s note 2023-12-11
 
@@ -446,7 +448,7 @@ summary(rowSums(Subsample))
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   14983   14994   14996   14996   14998   15004
+    ##   14984   14993   14995   14995   14997   15003
 
 \*Remember, we rounded the averaged subsample data, so there will be a
 little bit of variation in the number of reads per sample, but nothing
@@ -1574,10 +1576,12 @@ p$aov.tab
     ## 
     ## Terms added sequentially (first to last)
     ## 
-    ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      2    0.2982 0.14909   1.251 0.06671 0.2727
-    ## Residuals 35    4.1712 0.11918         0.93329       
-    ## Total     37    4.4694                 1.00000
+    ##           Df SumsOfSqs MeanSqs F.Model      R2  Pr(>F)  
+    ## Group      2    0.2982 0.14909   1.251 0.06671 0.09091 .
+    ## Residuals 35    4.1712 0.11918         0.93329          
+    ## Total     37    4.4694                 1.00000          
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
 p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$BMI_Category_Final,TRUE,10)
@@ -1612,12 +1616,10 @@ p$aov.tab
     ## 
     ## Terms added sequentially (first to last)
     ## 
-    ##           Df SumsOfSqs MeanSqs F.Model      R2  Pr(>F)  
-    ## Group      1    0.2205 0.22049  1.8681 0.04933 0.09091 .
-    ## Residuals 36    4.2489 0.11803         0.95067          
-    ## Total     37    4.4694                 1.00000          
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
+    ## Group      1    0.2205 0.22049  1.8681 0.04933 0.1818
+    ## Residuals 36    4.2489 0.11803         0.95067       
+    ## Total     37    4.4694                 1.00000
 
 ``` r
 p<-PERMDISP(Data.Baby1w[,-c(1:3)],BCData$Exclusive_BF,TRUE,10)
@@ -1710,7 +1712,7 @@ p$aov.tab
     ## Terms added sequentially (first to last)
     ## 
     ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      2    0.5357 0.26783 0.89217 0.04851 0.4545
+    ## Group      2    0.5357 0.26783 0.89217 0.04851 0.2727
     ## Residuals 35   10.5071 0.30020         0.95149       
     ## Total     37   11.0428                 1.00000
 
@@ -1726,7 +1728,7 @@ p
     ## 
     ## Response: Distances
     ##           Df  Sum Sq  Mean Sq      F N.Perm Pr(>F)
-    ## Groups     2 0.03072 0.015359 1.3758     10 0.3636
+    ## Groups     2 0.03072 0.015359 1.3758     10 0.2727
     ## Residuals 35 0.39072 0.011163
 
 -   And for breastfeeding:
@@ -1754,7 +1756,7 @@ p$aov.tab
     ## Terms added sequentially (first to last)
     ## 
     ##           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-    ## Group      1    0.2786 0.27859 0.93173 0.02523 0.3636
+    ## Group      1    0.2786 0.27859 0.93173 0.02523 0.5455
     ## Residuals 36   10.7642 0.29901         0.97477       
     ## Total     37   11.0428                 1.00000
 
@@ -1770,7 +1772,7 @@ p
     ## 
     ## Response: Distances
     ##           Df  Sum Sq   Mean Sq      F N.Perm Pr(>F)
-    ## Groups     1 0.00049 0.0004867 0.0402     10 0.5455
+    ## Groups     1 0.00049 0.0004867 0.0402     10 0.7273
     ## Residuals 36 0.43574 0.0121039
 
 ## 8.5 Multipanel plots
